@@ -16,7 +16,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 # ---- JWT (tạo + giải mã token) ----
-def create_access_token(data: dict) -> str: #tai sao lai la dict
+def create_access_token(data: dict) -> str:
     payload = data.copy()
     payload["type"] = "access"
     payload["exp"] = datetime.now(timezone.utc) + timedelta(
@@ -34,7 +34,7 @@ def create_refresh_token(user_id : int) -> str:
 
 
 # Sai chu ky hoac het han tu raise jwt.PyJWTError
-def decode_token(token: dict) -> str:
+def decode_token(token: str) -> dict:
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
 

@@ -1,12 +1,9 @@
-from os import path
-
-from fastapi import APIRouter, Depends, HTTPException, Request, Body
-from fastapi.routing import APIRoute
+from fastapi import APIRouter, Depends, Request, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.schemas.user import UserRegister, UserOut
 from app.services import auth_service
-from app.db.session import get_db
+from app.db.get_db import get_db
 from app.core.response import build_response
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -17,7 +14,7 @@ def register(payload: UserRegister, request: Request, db : Session = Depends(get
     return build_response(
         201,
         "Dang ky thanh cong",
-        UserOut.model_validate,
+        UserOut.model_validate(user),
         path=request.url.path
         )
 @router.post("/login", summary="Dang nhap va nhan JWT")

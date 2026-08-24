@@ -19,4 +19,4 @@ class Campaign(Base):
         back_populates="campaign",
         cascade="all, delete-orphan",
     )  # xóa campaign → xóa luôn member trong bảng trung gian
-    tasks = relationship("CampaignTask", back_populates="campaign")  # 1 campaign có nhiều task
+    tasks = relationship("CampaignTask", back_populates="campaign", cascade="all, delete-orphan")  # 1 campaign có nhiều task

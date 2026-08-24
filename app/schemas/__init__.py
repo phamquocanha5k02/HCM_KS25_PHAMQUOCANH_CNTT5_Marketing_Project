@@ -18,7 +18,7 @@ from app.schemas.campaign_task import (
     TaskPriority,
     TaskStatus,
 )
-from app.schemas.user import UserBase, UserCreate, UserResponse, UserUpdate
+from app.schemas.user import UserBase, UserRegister, UserOut, UserUpdate
 
 __all__ = [
     "CampaignBase",
@@ -36,7 +36,7 @@ __all__ = [
     "TaskPriority",
     "TaskStatus",
     "UserBase",
-    "UserCreate",
-    "UserResponse",
+    "UserRegister",
+    "UserOut",
     "UserUpdate",
 ]
