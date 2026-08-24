@@ -1,3 +1,5 @@
+from enum import member
+
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import Optional
@@ -88,4 +90,27 @@ def add_member(db: Session, campaign_id : int, user_id: int, actor_id: int) -> N
     db.add(CampaignMember(campaign_id = campaign_id, user_id = user_id, role = "MEMBER"))
     db.commit()
     
+    
+def remove_member(db: Session, campaign_id : int, user_id: int, actor_id: int) -> None:
+    campaign = db.get(Campaign, campaign_id)
+    if campaign is None:
+        raise HTTPException(
+            status_code = 404,
+            detail="Chien dich khong ton tai"
+        )
+    require_owner(db, campaign, actor_id) # Chi owner moi duoc xoa member
+    
+    member = get_membership(db, campaign_id, user_id)
+    if member is None:
+        raise HTTPException(
+            status_code = 404,
+            detail= "Khong tim thay thanh vien"
+        )
+    if campaign.owner_id == user_id:
+        raise HTTPException(
+            status_code = 400,
+            detail= "Khong the xoa owner cua chien dich"
+        )
+    db.delete(member)
+    db.commit()
     

@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -20,9 +20,11 @@ class CampaignUpdate(BaseModel):
     # KHÔNG cho sửa owner_id
 
 
-class CampaignResponse(CampaignBase):
+class CampaignOut(CampaignBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    name: str
+    description: Optional[str] = None
     owner_id: int  # trả kèm để client biết ai là owner
     created_at: datetime
