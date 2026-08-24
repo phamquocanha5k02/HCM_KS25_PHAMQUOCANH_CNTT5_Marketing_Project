@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment — KHÔNG commit file .env (chỉ commit .env.example)
+.env
+
+# macOS
+.DS_Store
