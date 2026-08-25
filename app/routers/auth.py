@@ -19,8 +19,8 @@ def register(payload: UserRegister, request: Request, db : Session = Depends(get
         )
 @router.post("/login", summary="Dang nhap va nhan JWT")
 def login(
+    request: Request,
     form : OAuth2PasswordRequestForm = Depends(),
-    request: Request = None,
     db: Session = Depends(get_db)
     ):
     data =  auth_service.login(db,form.username, form.password)
@@ -28,6 +28,6 @@ def login(
     return build_response(200, "Dang nhap thanh cong", data, path = request.url.path)
 
 @router.post("/refresh", summary="Cap lai access token ")
-def refresh(request: Request = None, payload: dict = Body(...), db: Session = Depends(get_db)):
+def refresh(request: Request, payload: dict = Body(...), db: Session = Depends(get_db)):
     data = auth_service.refresh_access_token(db, payload.get("refresh_token", ""))
     return build_response(200, "Cap token moi thanh cong", data, path=request.url.path)

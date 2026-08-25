@@ -6,6 +6,7 @@ from app import models  # import để model được "đăng ký" vào Base tr�
 from app.core.response import build_response
 from app.db.base import Base
 from app.db.session import engine
+from app.models.task_comment import TaskComment
 
 app = FastAPI(title="Campaign Management API")
 
@@ -39,9 +40,8 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
 
 
 Base.metadata.create_all(bind=engine)
-
-from app.routers import auth, users, campaigns
+from app.routers import auth, users, campaigns, campaign_tasks, 
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(campaigns.router)
-
+app.include_router(campaign_tasks.router)

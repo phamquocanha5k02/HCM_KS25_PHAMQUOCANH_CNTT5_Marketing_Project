@@ -11,7 +11,7 @@ from app.dependencies.require_admin import require_admin
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/me", summary="Xem hồ sơ cá nhân")
-def get_me(request: Request = None,
+def get_me(request: Request,
     current_user: User = Depends(get_current_user)):
     return build_response(
         200,
@@ -22,7 +22,7 @@ def get_me(request: Request = None,
 
 @router.get("", summary="Danh sách người dùng (chỉ Admin)")
 def list_users(
-    request: Request = None,
+    request: Request,
     search: Optional[str] = None,     # tìm theo tên/email
     is_active: Optional[bool] = None, # lọc trạng thái
     db: Session = Depends(get_db),

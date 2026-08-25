@@ -1,5 +1,3 @@
-from enum import member
-
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import Optional
@@ -49,8 +47,8 @@ def update_campaign(db: Session, campaign_id : int, payload: CampaignUpdate, use
             detail = "Chien dich khong ton tai"
         )
     require_owner(db, campaign, user_id) #chi owner moi duoc sua
-    for key, value in payload.model_dump(exclude=True).items():
-        setattr(campaign, key, value) # ghi de truong gui len path
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(campaign, key, value) # chi ghi de truong client gui len (PATCH)
     db.commit()
     db.refresh(campaign)
     return campaign

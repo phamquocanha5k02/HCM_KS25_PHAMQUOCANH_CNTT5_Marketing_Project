@@ -13,7 +13,7 @@ class UserRegister(UserBase):
     # KHÔNG có role/is_active → role mặc định "USER", chống leo thang đặc quyền
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(UserBase):
     email: EmailStr | None = None
     full_name: str | None = Field(default=None, min_length=2, max_length=100)
     password: str | None = Field(default=None, min_length=6, max_length=72)

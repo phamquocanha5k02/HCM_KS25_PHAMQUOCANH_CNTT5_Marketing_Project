@@ -1,7 +1,7 @@
 from app.schemas.campaign import (
     CampaignBase,
     CampaignCreate,
-    CampaignResponse,
+    CampaignOut,
     CampaignUpdate,
 )
 from app.schemas.campaign_member import (
@@ -23,7 +23,7 @@ from app.schemas.user import UserBase, UserRegister, UserOut, UserUpdate
 __all__ = [
     "CampaignBase",
     "CampaignCreate",
-    "CampaignResponse",
+    "CampaignOut",
     "CampaignUpdate",
     "CampaignMemberBase",
     "CampaignMemberCreate",
