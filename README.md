@@ -110,40 +110,6 @@ campaign_management/
 
 ---
 
-## ⚠️ Lỗi thường gặp
-
-| Lỗi | Nguyên nhân | Cách xử lý |
-|---|---|---|
-| `"Not authenticated"` (401) | Chưa Authorize trên Swagger hoặc token hết hạn | Bấm Authorize → nhập username/password |
-| `"Khong the xac thuc..."` (401) | Token cũ/hỏng lưu trong trình duyệt | Authorize → logout → authorize lại |
-| `python-multipart` lỗi | Thiếu package cho upload file | `pip install python-multipart` |
-| `address already in use` | Port bị chiếm | Đổi port bằng `--port 8000` |
-| Bảng không được tạo khi thêm model mới | Quên import model vào `app/models/__init__.py` | Thêm vào `__init__.py` rồi khởi động lại |
-| `create_all` không sửa bảng cũ | Thay đổi cột không tự migrate | Drop bảng cũ hoặc dùng Alembic |
-
----
-
-## 🧪 Test nhanh (không cần Swagger)
-
-```bash
-# 1. Login lấy token
-TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
-  -d "username=owner@example.com&password=Owner123!" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-
-# 2. Gọi endpoint bảo vệ
-curl -s http://127.0.0.1:8000/api/users/me -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 📚 Tài liệu thêm
-
-- `docs/luong_hoat_dong.md` — luồng hoạt động chi tiết từng phần
-- `docs/ly_thuyet_van_dap.md` — lý thuyết ôn vấn đáp
-
----
-
 ## 📊 Checklist Tổng Hợp — 37 Kịch Bản (Tick được)
 
 > 📋 Bản Excel tương đương: `CHECKLIST_TEST.xlsx` (có dropdown Pass/Fail).
