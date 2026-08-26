@@ -16,7 +16,7 @@ def register(db: Session, payload: UserRegister) -> User:
     if exist:
         raise HTTPException(
             status_code=409,
-            detail="Email da duoc dang ki"
+            detail="Email đã được đăng ký"
         )
     user = User(
         email = payload.email,
@@ -35,12 +35,12 @@ def login(db: Session, email: str, password: str) -> dict:
     if not user or not verify_password(password, user.password_hash):
         raise HTTPException(
             status_code=401,
-            detail = "Email hoac mat khau khong dung" #-> su dung thong bao chung cho sai email hoac mk de tranh do email exists
+            detail = "Email hoặc mật khẩu không đúng" #-> su dung thong bao chung cho sai email hoac mk de tranh do email exists
         )
     if not user.is_active:
         raise HTTPException(
             status_code=403,
-            detail = "Tai khoan khong hoat dong"
+            detail = "Tài khoảng không hoạt động"
         )
     token = create_access_token({
         "sub": str(user.id),
@@ -61,19 +61,19 @@ def refresh_access_token(db: Session, refresh_token : str) -> dict:
         if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=401,
-                detail="Token khong hop le"
+                detail="Token không hợp lệ"
             )
         user_id = int(payload.get("sub"))
     except (jwt.PyJWTError, ValueError, TypeError):
         raise HTTPException(
             status_code=401,
-            detail="Refresh token sai hoac da het han"
+            detail="Refresh token sai hoặc đã hết hạn"
         )
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(
             status_code=403,
-            detail="Tai khoang khong hoat dong"
+            detail="Tài khoản không hoạt động"
             )
     new_access = create_access_token(
             {
