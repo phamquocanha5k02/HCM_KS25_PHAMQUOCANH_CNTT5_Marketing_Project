@@ -1,64 +1,285 @@
+# 📢 Marketing Campaign Management API
 
-# Campaign — Checklist Kịch Bản Test Chi Tiết
+API quản lý chiến dịch marketing: user, chiến dịch, thành viên, đầu việc (task), comment và file đính kèm.
 
-> Checklist test thủ công cho toàn bộ API — chi tiết hơn bản Excel `CHECKLIST_TEST.xlsx` (37 kịch bản). Mỗi kịch bản có: điều kiện tiên quyết, input, expected output, các bước thực hiện và checkbox kết quả.
->
-> ⭐ = kịch bản regression cho các bug đã sửa.
-
-## 🧭 Hướng dẫn sử dụng
-
-1. Chạy server: `uvicorn main:app --reload` → mở `http://127.0.0.1:8000/docs`
-2. Bấm **Authorize** → `username` + `password` (không cần client_secret) → khóa 🔓
-3. Với mỗi kịch bản: làm theo **Các bước** → đối chiếu **Expected** → đánh dấu kết quả
-4. Nếu Fail → ghi rõ lỗi vào **Tại sao fail**
-
-> [!warning] Tài khoản test nhanh
-> Seed tạo sẵn: `owner@example.com` / `Owner123!` (ADMIN) · `member@example.com` / `Member123!` (USER)
-> Access token hết hạn sau **30 phút** — hết hạn thì Authorize lại.
+Xây dựng với **FastAPI + SQLAlchemy 2.0 + MySQL**, theo kiến trúc **3 lớp** (Router → Service → Model).
 
 ---
 
-## 📊 Mục 1 — Bảng tổng hợp 37 kịch bản
+## 🧰 Công nghệ
 
-| Mã | Nhóm | Mô tả | API | Expected |
-|---|---|---|---|---|
-| TC-001 | Health | Server sống | GET /health | 200 |
-| TC-002 | Auth | Đăng ký thành công | POST /api/auth/register | 201 |
-| TC-003 | Auth | Đăng ký trùng email | POST /api/auth/register | 409 |
-| TC-004 | Auth | Password ngắn | POST /api/auth/register | 422 |
-| TC-005 | Auth | Thiếu field | POST /api/auth/register | 422 |
-| TC-006 | Auth | ⭐ Login chuẩn OAuth2 | POST /api/auth/login | 200, access_token cấp cao nhất |
-| TC-007 | Auth | Login sai mật khẩu | POST /api/auth/login | 401 |
-| TC-008 | Auth | Login email lạ | POST /api/auth/login | 401 |
-| TC-009 | Auth | Refresh hợp lệ | POST /api/auth/refresh | 200 |
-| TC-010 | Auth | Refresh token rác | POST /api/auth/refresh | 401 |
-| TC-011 | Users | /me không token | GET /api/users/me | 401 |
-| TC-012 | Users | /me có token | GET /api/users/me | 200 |
-| TC-013 | Users | /users user thường | GET /api/users | 403 |
-| TC-014 | Users | /users admin + search | GET /api/users?search= | 200 |
-| TC-015 | Campaign | Tạo campaign → OWNER | POST /api/campaigns | 201 |
-| TC-016 | Campaign | Tạo không token | POST /api/campaigns | 401 |
-| TC-017 | Campaign | Cô lập dữ liệu | GET /api/campaigns | 200, data=[] |
-| TC-018 | Campaign | Xem không phải member | GET /api/campaigns/{id} | 403 |
-| TC-019 | Campaign | Sửa không phải OWNER | PATCH /api/campaigns/{id} | 403 |
-| TC-020 | Member | Thêm member trùng | POST /api/campaigns/{id}/members | 400 |
-| TC-021 | Member | Xóa OWNER | DELETE /api/campaigns/{id}/members/{uid} | 400 |
-| TC-022 | Campaign | Xóa campaign cascade | DELETE /api/campaigns/{id} | 200 |
-| TC-023 | Task | Tạo task mặc định | POST /api/campaigns/{id}/campaign-tasks | 201 |
-| TC-024 | Task | Enum sai | POST task | 422 |
-| TC-025 | Task | Assignee ngoài campaign | POST task | 400 |
-| TC-026 | Task | ⭐ Update bởi OWNER | PATCH /api/campaign-tasks/{id} | 200 |
-| TC-027 | Task | Update bởi member | PATCH task | 403 |
-| TC-028 | Task | ⭐ Sort sai | GET task?sort=xyz | 400 |
-| TC-029 | Task | Filter status | GET task?status=TODO | 200 |
-| TC-030 | Task | Assignee xóa task mình | DELETE task | 200 |
-| TC-031 | Comment | Thêm comment | POST .../comments | 201 |
-| TC-032 | Comment | ⭐ List comments | GET .../comments | 200 |
-| TC-033 | Comment | Comment không phải member | POST comments | 403 |
-| TC-034 | Comment | Xóa task → cascade comment | DELETE task | 200 |
-| TC-035 | Attachment | Upload sai loại | POST .../attachments | 400 |
-| TC-036 | Attachment | ⭐ Upload .png | POST .../attachments | 201 |
-| TC-037 | Attachment | Upload không phải member | POST .../attachments | 403 |
+| Thành phần | Phiên bản |
+|---|---|
+| Python | 3.10+ (khuyến nghị 3.12/3.14) |
+| FastAPI | ≥ 0.115 |
+| SQLAlchemy | ≥ 2.0 |
+| MySQL | 8.x |
+| Auth | JWT (PyJWT) + bcrypt |
+
+## ✅ Tính năng chính
+
+- Đăng ký / Đăng nhập / Refresh token (JWT)
+- Phân quyền 2 tầng: **ADMIN/USER** (hệ thống) + **OWNER/MEMBER** (trong campaign)
+- CRUD chiến dịch, quản lý thành viên (chống trùng, chống xóa owner)
+- CRUD đầu việc: workflow `TODO/IN_PROGRESS/DONE`, priority `LOW/MEDIUM/HIGH`, giao việc chỉ cho member
+- Filter / search / sort / phân trang (limit, offset)
+- Comment trên đầu việc (chỉ member của campaign)
+- Upload file đính kèm (kiểm tra loại + kích thước, chống path traversal)
+- Response chuẩn hóa + global exception handler
+
+---
+
+## 🚀 Cài đặt & chạy
+
+### Bước 1 — Tạo database MySQL
+
+```sql
+CREATE DATABASE campaign_management_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### Bước 2 — Tạo môi trường ảo và cài dependencies
+
+```bash
+cd campaign_management
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### Bước 3 — Cấu hình `.env`
+
+```bash
+cp .env.example .env
+```
+
+Sửa file `.env` cho khớp MySQL của bạn:
+
+```env
+# Database
+DATABASE_URL=mysql+pymysql://root:mat_khau_cua_ban@localhost:3306/campaign_management_db
+
+# Security
+SECRET_KEY=day_la_secret_key_cua_ban
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+```
+
+### Bước 4 — (Tùy chọn) Nạp dữ liệu mẫu
+
+```bash
+python scripts/seed.py
+```
+
+Tạo 2 tài khoản demo:
+
+| Tài khoản | Mật khẩu | Role |
+|---|---|---|
+| `owner@example.com` | `Owner123!` | ADMIN |
+| `member@example.com` | `Member123!` | USER |
+
+(Kèm 1 campaign mẫu + 2 task mẫu)
+
+### Bước 5 — Chạy server
+
+```bash
+uvicorn main:app --reload
+```
+
+- Swagger UI: **http://127.0.0.1:8000/docs**
+- Health check: **http://127.0.0.1:8000/health**
+
+> ⚠️ Nếu lỗi `address already in use` → đổi port: `uvicorn main:app --port 8000 --reload`
+
+---
+
+## 🔐 Cách dùng Swagger (quan trọng!)
+
+Project dùng `OAuth2PasswordBearer` (OAuth2 **password flow**) — vì vậy:
+
+1. **Không có ô dán token** — đây là bình thường!
+2. Bấm nút **Authorize** (góc phải trên) → nhập:
+   - `username`: email (ví dụ `owner@example.com`)
+   - `password`: mật khẩu
+   - `client_secret`: **để TRỐNG**
+3. Bấm **Authorize** → khóa 🔒 chuyển thành 🔓
+4. Gọi các endpoint bảo vệ → không còn 401
+
+> 💡 Token hết hạn sau **30 phút** — hết hạn chỉ cần Authorize lại (không cần đăng nhập lại).
+> 💡 `POST /api/auth/login` trả **đúng chuẩn OAuth2** (`access_token` ở cấp cao nhất) — đừng đổi sang build_response kẻo Authorize hỏng!
+
+---
+
+## 📚 Danh sách endpoint
+
+### Auth
+| Method | URL | Quyền | Mô tả |
+|---|---|---|---|
+| POST | `/api/auth/register` | Public | Đăng ký `{email, full_name, password}` |
+| POST | `/api/auth/login` | Public | Form `username` + `password` → token |
+| POST | `/api/auth/refresh` | Public | Cấp lại access token `{refresh_token}` |
+
+### Users
+| Method | URL | Quyền | Mô tả |
+|---|---|---|---|
+| GET | `/api/users/me` | Đăng nhập | Thông tin cá nhân (không lộ password_hash) |
+| GET | `/api/users` | **ADMIN** | Danh sách user, `?search=&is_active=` |
+
+### Campaigns
+| Method | URL | Quyền | Mô tả |
+|---|---|---|---|
+| POST | `/api/campaigns` | Đăng nhập | Tạo campaign (tự thành OWNER) |
+| GET | `/api/campaigns` | Đăng nhập | Campaign của tôi, `?search=` |
+| GET | `/api/campaigns/{id}` | Member | Chi tiết campaign |
+| PATCH | `/api/campaigns/{id}` | **OWNER** | Sửa campaign |
+| DELETE | `/api/campaigns/{id}` | **OWNER** | Xóa (cascade xóa member + task) |
+
+### Campaign Members
+| Method | URL | Quyền | Mô tả |
+|---|---|---|---|
+| POST | `/api/campaigns/{id}/members` | **OWNER** | Thêm member `{user_id}` |
+| GET | `/api/campaigns/{id}/members` | Member | Danh sách thành viên + role |
+| DELETE | `/api/campaigns/{id}/members/{user_id}` | **OWNER** | Xóa member (không xóa được owner) |
+
+### Campaign Tasks
+| Method | URL | Quyền | Mô tả |
+|---|---|---|---|
+| POST | `/api/campaigns/{id}/campaign-tasks` | Member | Tạo task |
+| GET | `/api/campaigns/{id}/campaign-tasks` | Member | List + filter/search/sort/paginate |
+| GET | `/api/campaign-tasks/{id}` | Member | Chi tiết task |
+| PATCH | `/api/campaign-tasks/{id}` | **OWNER / assignee** | Sửa task |
+| DELETE | `/api/campaign-tasks/{id}` | **OWNER / assignee** | Xóa task (xóa luôn comment) |
+
+### Comments & Attachments
+| Method | URL | Quyền | Mô tả |
+|---|---|---|---|
+| POST | `/api/campaign-tasks/{id}/comments` | Member | Thêm comment `{content}` |
+| GET | `/api/campaign-tasks/{id}/comments` | Member | Danh sách comment |
+| POST | `/api/campaign-tasks/{id}/attachments` | Member | Upload file (PNG/JPEG/PDF ≤ 5MB) |
+
+**Filter/Sort/Paginate task:**
+```
+/api/campaigns/{id}/campaign-tasks?search=abc&status=TODO&priority=HIGH&assignee_id=1&sort=-created_at&limit=10&offset=0
+```
+- `sort`: `created_at`, `due_date`, `title`, `priority`, `status` (thêm `-` = giảm dần)
+
+---
+
+## 📁 Cấu trúc thư mục
+
+```
+campaign_management/
+├── main.py                  # Khởi động app + exception handlers + create_all
+├── requirements.txt
+├── .env / .env.example
+├── app/
+│   ├── routers/             # Đón request, gọi service, trả response
+│   │   ├── auth.py  users.py  campaigns.py  campaign_tasks.py
+│   ├── services/            # Logic nghiệp vụ + phân quyền
+│   │   ├── auth_service.py  user_service.py
+│   │   ├── campaign_service.py  task_service.py
+│   │   └── membership_helper.py   # require_member / require_owner ⭐
+│   ├── models/              # SQLAlchemy models (users, campaigns, ...)
+│   ├── schemas/             # Pydantic: Base/Create/Update/Response
+│   ├── dependencies/        # get_current_user, require_admin
+│   ├── core/                # config, security (bcrypt + JWT), response, exceptions
+│   └── db/                  # session.py, get_db.py, base.py
+├── scripts/
+│   └── seed.py              # Nạp dữ liệu mẫu
+└── docs/                    # Tài liệu luồng hoạt động + lý thuyết vấn đáp
+```
+
+---
+
+## ⚠️ Lỗi thường gặp
+
+| Lỗi | Nguyên nhân | Cách xử lý |
+|---|---|---|
+| `"Not authenticated"` (401) | Chưa Authorize trên Swagger hoặc token hết hạn | Bấm Authorize → nhập username/password |
+| `"Khong the xac thuc..."` (401) | Token cũ/hỏng lưu trong trình duyệt | Authorize → logout → authorize lại |
+| `python-multipart` lỗi | Thiếu package cho upload file | `pip install python-multipart` |
+| `address already in use` | Port bị chiếm | Đổi port bằng `--port 8000` |
+| Bảng không được tạo khi thêm model mới | Quên import model vào `app/models/__init__.py` | Thêm vào `__init__.py` rồi khởi động lại |
+| `create_all` không sửa bảng cũ | Thay đổi cột không tự migrate | Drop bảng cũ hoặc dùng Alembic |
+
+---
+
+## 🧪 Test nhanh (không cần Swagger)
+
+```bash
+# 1. Login lấy token
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
+  -d "username=owner@example.com&password=Owner123!" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# 2. Gọi endpoint bảo vệ
+curl -s http://127.0.0.1:8000/api/users/me -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## 📚 Tài liệu thêm
+
+- `docs/luong_hoat_dong.md` — luồng hoạt động chi tiết từng phần
+- `docs/ly_thuyet_van_dap.md` — lý thuyết ôn vấn đáp
+
+---
+
+## 📊 Checklist Tổng Hợp — 37 Kịch Bản (Tick được)
+
+> 📋 Bản Excel tương đương: `CHECKLIST_TEST.xlsx` (có dropdown Pass/Fail).
+> ⭐ = kịch bản regression cho các bug đã sửa.
+
+### 🩺 Health
+- [ ] **TC-001** Server sống → `200`
+
+### 🔐 Auth
+- [ ] **TC-002** Đăng ký thành công → `201`
+- [ ] **TC-003** Đăng ký trùng email → `409`
+- [ ] **TC-004** Password quá ngắn → `422`
+- [ ] **TC-005** Thiếu field bắt buộc → `422`
+- [ ] **TC-006** ⭐ Login chuẩn OAuth2 (access_token cấp cao nhất) → `200`
+- [ ] **TC-007** Login sai mật khẩu → `401`
+- [ ] **TC-008** Login email không tồn tại → `401`
+- [ ] **TC-009** Refresh token hợp lệ → `200`
+- [ ] **TC-010** Refresh token rác → `401`
+
+### 👤 Users
+- [ ] **TC-011** /users/me không token → `401`
+- [ ] **TC-012** /users/me có token → `200`
+- [ ] **TC-013** /users với user thường → `403`
+- [ ] **TC-014** /users admin + search → `200`
+
+### 📢 Campaigns & Members
+- [ ] **TC-015** Tạo campaign → tự thành OWNER → `201`
+- [ ] **TC-016** Tạo campaign không token → `401`
+- [ ] **TC-017** Cô lập dữ liệu (user B không thấy campaign A) → `200 data=[]`
+- [ ] **TC-018** Xem campaign không phải member → `403`
+- [ ] **TC-019** Sửa campaign không phải OWNER → `403`
+- [ ] **TC-020** Thêm member trùng → `400`
+- [ ] **TC-021** Xóa OWNER khỏi campaign → `400`
+- [ ] **TC-022** Xóa campaign → cascade member + task → `200`
+
+### 📝 Tasks
+- [ ] **TC-023** Tạo task mặc định (TODO/MEDIUM) → `201`
+- [ ] **TC-024** Gửi enum không hợp lệ → `422`
+- [ ] **TC-025** Gán assignee NGOÀI campaign → `400`
+- [ ] **TC-026** ⭐ Update task bởi OWNER → `200`
+- [ ] **TC-027** Update task bởi member thường → `403`
+- [ ] **TC-028** ⭐ Sort không hợp lệ → `400`
+- [ ] **TC-029** Filter theo status → `200`
+- [ ] **TC-030** Assignee xóa task của mình → `200`
+
+### 💬 Comments
+- [ ] **TC-031** Thêm comment → `201`
+- [ ] **TC-032** ⭐ List comments → `200`
+- [ ] **TC-033** Comment khi không phải member → `403`
+- [ ] **TC-034** Xóa task → cascade comment → `200`
+
+### 📎 Attachments
+- [ ] **TC-035** Upload file sai loại (.txt) → `400`
+- [ ] **TC-036** ⭐ Upload .png hợp lệ → `201`
+- [ ] **TC-037** Upload khi không phải member → `403`
 
 ---
 
@@ -355,42 +576,6 @@
 - **Kết quả:** - [ ] Chưa test · **Tại sao fail:**
 
 ---
-
-## ✅ Checklist tổng cuối buổi
-
-### Health & Auth
-- [ ] TC-001 Server sống
-- [ ] TC-002 Đăng ký OK
-- [ ] TC-003 Trùng email 409
-- [ ] TC-004/005 Validation 422
-- [ ] TC-006 ⭐ Login chuẩn OAuth2
-- [ ] TC-007/008 Sai thông tin 401
-- [ ] TC-009/010 Refresh
-
-### Users
-- [ ] TC-011/012 /me 401 & 200
-- [ ] TC-013/014 /users 403 & 200 + search
-
-### Campaigns & Members
-- [ ] TC-015/016 Tạo campaign + không token
-- [ ] TC-017/018 Cô lập + 403
-- [ ] TC-019 Sửa không phải owner 403
-- [ ] TC-020/021 Member trùng + xóa owner
-- [ ] TC-022 Cascade
-
-### Tasks
-- [ ] TC-023/024 Tạo + enum 422
-- [ ] TC-025 Assignee ngoài 400
-- [ ] TC-026 ⭐ Update owner 200
-- [ ] TC-027 Update member 403
-- [ ] TC-028 ⭐ Sort sai 400
-- [ ] TC-029/030 Filter + assignee xóa
-
-### Comments & Attachments
-- [ ] TC-031/032 ⭐ Thêm + list comments
-- [ ] TC-033/034 403 + cascade
-- [ ] TC-035/036 ⭐ Upload sai loại + png
-- [ ] TC-037 Upload 403
 
 > [!success] Khi hoàn thành
 > 37/37 pass = project sẵn sàng demo & vấn đáp. Ghi nhớ kể 4 câu chuyện bug ⭐ khi được hỏi "em gặp lỗi gì khi làm dự án?"
