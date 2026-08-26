@@ -1,6 +1,8 @@
 # Router cho Campaign Task — Ngày 4: CRUD task, assignee trong chiến dịch, workflow, filter/sort/pagination, permission OWNER/assignee
 from typing import Optional
-from fastapi import APIRouter, Depends, Request
+from uuid import uuid4
+from pathlib import Path          # ⚠️ pathlib.Path, KHÔNG phải fastapi.Path!
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from app.core.response import build_response
 from app.db.get_db import get_db
@@ -13,7 +15,7 @@ from app.schemas.campaign_task import (
     CampaignTaskUpdate,
 )
 from app.services import task_service
-
+import os
 router = APIRouter(tags=["campaign-tasks"])
 
 
@@ -85,5 +87,58 @@ def add_comment(task_id: int,
     return build_response(
         201,
         "Them comment thanh cong",
+        {"comment_id": comment.id},
         path = request.url.path
     )
+
+
+@router.get("/api/campaign-tasks/{task_id}/comments", summary="Danh sach comments")
+def list_comments(task_id: int,
+                request: Request = None,
+                db: Session = Depends(get_db),
+                current_user : User = Depends(get_current_user)):
+    comments = task_service.list_comment(db, task_id, current_user.id)
+    data = [
+        {"id": c.id, "content": c.content, "user_id": c.user_id,
+        "created_at": c.created_at.isoformat()}
+        for c in comments
+    ]
+    return build_response(200, "Danh sach comments", data, path=request.url.path)
+    
+    
+# ---- Upload File ----
+ALLOWED_TYPES = {"image/png", "image/jpeg", "application/pdf"}
+ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".pdf"}
+MAX_SIZE = 5 * 1024 * 1024   # 5 MB
+
+@router.post("/api/campaign-tasks/{task_id}/attachments",
+            status_code=201,
+            summary="Upload file đính kèm ")
+def upload_attachment(task_id: int,
+                    request: Request,
+                    file: UploadFile = File(...),
+                    db: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
+    task = task_service.get_task(db, task_id, current_user.id)   # check member
+
+    # 1 Kiểm tra loại file: content_type (client khai) + đuôi file (thật sự)
+    ext = Path(file.filename or "").suffix.lower()
+    if file.content_type not in ALLOWED_TYPES or ext not in ALLOWED_EXTS:
+        raise HTTPException(status_code=400, detail="Loại file không được phép")
+
+    # 2 Kiểm tra kích thước — đo thật, không tin file.size
+    data = file.file.read()
+    if len(data) > MAX_SIZE:
+        raise HTTPException(status_code=400, detail="File quá 5MB")
+
+    # 3 Lưu file với tên ngẫu nhiên → chống path traversal + trùng tên
+    upload_dir = f"uploads/{task.campaign_id}/{task_id}"
+    os.makedirs(upload_dir, exist_ok=True)
+    path = f"{upload_dir}/{uuid4().hex}{ext}"
+    with open(path, "wb") as f:
+        f.write(data)
+
+    return build_response(201,
+                        "Upload thành công",
+                        {"path": path},
+                        path=request.url.path)

@@ -12,7 +12,7 @@ class TaskComment(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
-    task = relationship("CampaignTask", back_populates="comments", cascade="all, delete_orphan")
+    task = relationship("CampaignTask", back_populates="comments")
     user = relationship("User")
     
     # su dung on delete cascade de dong bo du lieu neu xoa task thi xoa cac comment lien quan

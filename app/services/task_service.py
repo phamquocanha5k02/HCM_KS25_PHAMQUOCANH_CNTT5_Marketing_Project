@@ -61,8 +61,15 @@ def list_tasks(db: Session, campaign_id: int, user_id: int,
         query = query.filter(CampaignTask.assignee_id == assignee_id)
     
     # sort: "-created_at" = giảm dần, "due_date" = tăng dần
-    
-    col = getattr(CampaignTask, sort.lstrip("-")) #????
+    # ⚠️ WHITELIST các cột được phép sort — tránh AttributeError -> 500
+    ALLOWED_SORT = {"created_at", "due_date", "title", "priority", "status"}
+    sort_key = sort.lstrip("-")
+    if sort_key not in ALLOWED_SORT:
+        raise HTTPException(
+            status_code=400,
+            detail="Truong sort khong hop le"
+        )
+    col = getattr(CampaignTask, sort_key)
     query = query.order_by(col.desc() if sort.startswith("-") else col.asc())
     
     return query.offset(offset).limit(limit).all() # phan trang
@@ -75,7 +82,7 @@ def get_task(db: Session, task_id, user_id) -> CampaignTask:
 def update_task(db: Session, task_id: int, payload: CampaignTaskUpdate, user_id: int) -> CampaignTask:
     task = _get_task(db, task_id)
     require_member(db, task.campaign_id, user_id)
-    if not _can_management_task(db, task.campaign_id, user_id):
+    if not _can_management_task(db, task, user_id):
         raise HTTPException(
             status_code = 403,
             detail = "Ban khong co quyen cap nhat dau viec nay"

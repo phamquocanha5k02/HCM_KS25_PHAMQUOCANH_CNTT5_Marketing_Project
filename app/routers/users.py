@@ -7,6 +7,7 @@ from app.db.get_db import get_db
 from app.core.response import build_response
 from app.dependencies.get_current_user import get_current_user
 from app.dependencies.require_admin import require_admin
+from app.services import user_service
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -26,16 +27,12 @@ def list_users(
     search: Optional[str] = None,     # tìm theo tên/email
     is_active: Optional[bool] = None, # lọc trạng thái
     db: Session = Depends(get_db),
-    _ : User = Depends(require_admin)):  # chỉ ADMIN
-    query = db.query(User)
-    if search:
-        query = query.filter( User.email.contains(search) | User.full_name.contains(search))
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
-    users = [UserOut.model_validate(u) for u in query.all()]
+    _admin: User = Depends(require_admin)):  # chỉ ADMIN
+    users = user_service.list_users(db, search, is_active)  # logic ở service
+    data = [UserOut.model_validate(u) for u in users]
     return build_response(
         200,
         "Danh sách người dùng",
-        users,
+        data,
         path=request.url.path
         )

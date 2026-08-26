@@ -21,5 +21,5 @@ class CampaignTask(Base):
     # Relationship với Campaign
     campaign = relationship("Campaign", back_populates="tasks")
     assignee = relationship("User", back_populates="assigned_tasks", foreign_keys="CampaignTask.assignee_id")
-
+    comments = relationship("TaskComment", back_populates="task", cascade="all, delete-orphan")
     # Quyền sửa/xoá task dựa vào: OWNER của campaign (campaigns.owner_id) hoặc assignee của task
