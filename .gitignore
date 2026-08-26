@@ -9,3 +9,6 @@ venv/
 
 # macOS
 .DS_Store
+
+# Uploaded files (file đính kèm của user — không commit)
+uploads/
