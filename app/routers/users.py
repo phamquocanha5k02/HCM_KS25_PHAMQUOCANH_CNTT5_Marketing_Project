@@ -11,7 +11,8 @@ from app.services import user_service
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
-@router.get("/me", summary="Xem hồ sơ cá nhân")
+@router.get("/me", summary="Xem hồ sơ cá nhân",
+            description="Trả thông tin user đang đăng nhập (lấy từ JWT). KHÔNG bao giờ lộ password_hash trong response.")
 def get_me(request: Request,
     current_user: User = Depends(get_current_user)):
     return build_response(
@@ -21,7 +22,8 @@ def get_me(request: Request,
         path=request.url.path
         )
 
-@router.get("", summary="Danh sách người dùng (chỉ Admin)")
+@router.get("", summary="Danh sách người dùng (chỉ Admin)",
+            description="Chỉ ADMIN mới gọi được. Hỗ trợ search theo tên/email (?search=) và lọc trạng thái (?is_active=true/false).")
 def list_users(
     request: Request,
     search: Optional[str] = None,     # tìm theo tên/email
