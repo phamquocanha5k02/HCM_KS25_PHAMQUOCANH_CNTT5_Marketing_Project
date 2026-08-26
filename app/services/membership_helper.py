@@ -5,7 +5,7 @@ from app.models.campaign import Campaign
 
 def get_membership(db: Session, campaign_id: int, user_id: int) -> CampaignMember | None:
     """Trả dòng member (có role) hoặc None nếu user không thuộc campaign."""
-    # ⭐ PK của campaign_members là CẶP (user_id, campaign_id).
+    # PK của campaign_members là CẶP (user_id, campaign_id).
     # Truyền dict theo TÊN cột → không bị nhầm thứ tự tuple.
     return db.get(CampaignMember, {"campaign_id": campaign_id, "user_id": user_id})
 

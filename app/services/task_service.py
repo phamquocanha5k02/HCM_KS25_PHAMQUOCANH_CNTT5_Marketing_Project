@@ -34,7 +34,7 @@ def create_task(db: Session, campaign_id: int, payload: CampaignTaskCreate, user
 
 def _validate_assignee(db: Session, campaign_id: int, assignee_id: int) -> None:
     #Gán việc chỉ cho user TRONG chiến dịch — ngoài → 400
-    if db.get(CampaignMember, (campaign_id, assignee_id)) is None:
+    if db.get(CampaignMember, (assignee_id, campaign_id)) is None:
         raise HTTPException(
             status_code=400,
             detail="Nguoi duoc giao viec khong thuoc chien dich"
